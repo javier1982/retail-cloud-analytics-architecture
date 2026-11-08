@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "Si utiliza este software o su documentación, cite este repositorio."
+title: "Retail Cloud Analytics Architecture"
+type: software
+version: 1.0.0
+
+authors:
+  - family-names: "Portilla Martínez"
+    given-names: "Diego Javier"
+
+  - family-names: "Páez Padilla"
+    given-names: "Mónica Elizabeth"
+
+  - family-names: "Portilla Páez"
+    given-names: "Alejandro Israel"
+
+repository-code: "https://github.com/javier1982/retail-cloud-analytics-architecture"
+
+license: MIT
+
+keywords:
+  - cloud analytics
+  - retail analytics
+  - SMEs
+  - BigQuery
+  - Python
+  - Pandas
+  - reproducibility
+  - business intelligence
+  - data analytics
