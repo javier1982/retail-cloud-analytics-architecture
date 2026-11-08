@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Environment variables and secrets
+.env
+.env.*
+*.json
+!config.example.json
+
+# Google Cloud credentials
+service-account*.json
+credentials*.json
+gcloud/
+.google/
+
+# Local datasets / temporary exports
+*.tmp
+*.log
+
+# Python testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local generated files
+temp/
+tmp/
