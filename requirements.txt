@@ -1,0 +1,7 @@
+pandas==3.1.1
+numpy==2.5.4
+google-cloud-bigquery==3.47.0
+google-auth==2.62.1
+google-cloud-bigquery-storage==2.43.0
+pyarrow==26.0.0
+db-dtypes==1.9.0
