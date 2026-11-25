@@ -61,3 +61,11 @@ htmlcov/
 # Local generated files
 temp/
 tmp/
+# Local datasets
+data/*.csv
+data/*.xlsx
+data/*.xls
+data/*.parquet
+
+# Keep documentation
+!data/README.md
