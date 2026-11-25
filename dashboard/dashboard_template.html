@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Retail Analytics Dashboard</title>
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/chart.js"
+    ></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 24px;
+            background: #f5f5f5;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        .description {
+            margin-bottom: 24px;
+        }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        select {
+            padding: 8px;
+        }
+
+        .kpis {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .card {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow:
+                0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .kpi-value {
+            font-size: 1.6rem;
+            font-weight: bold;
+        }
+
+        .charts {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        canvas {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Retail Analytics Dashboard</h1>
+
+    <p class="description">
+        Dashboard reproducible asociado a la arquitectura
+        analítica cloud descrita en el artículo científico.
+    </p>
+
+    <div class="filters">
+
+        <select id="yearFilter">
+            <option value="">Todos los años</option>
+        </select>
+
+        <select id="regionFilter">
+            <option value="">Todas las regiones</option>
+        </select>
+
+        <select id="categoryFilter">
+            <option value="">Todas las categorías</option>
+        </select>
+
+        <select id="segmentFilter">
+            <option value="">Todos los segmentos</option>
+        </select>
+
+    </div>
+
+    <div class="kpis">
+
+        <div class="card">
+            <div>Ventas</div>
+            <div
+                id="salesKpi"
+                class="kpi-value"
+            >
+                -
+            </div>
+        </div>
+
+        <div class="card">
+            <div>Beneficio</div>
+            <div
+                id="profitKpi"
+                class="kpi-value"
+            >
+                -
+            </div>
+        </div>
+
+        <div class="card">
+            <div>Margen</div>
+            <div
+                id="marginKpi"
+                class="kpi-value"
+            >
+                -
+            </div>
+        </div>
+
+        <div class="card">
+            <div>Pedidos</div>
+            <div
+                id="ordersKpi"
+                class="kpi-value"
+            >
+                -
+            </div>
+        </div>
+
+        <div class="card">
+            <div>Clientes</div>
+            <div
+                id="customersKpi"
+                class="kpi-value"
+            >
+                -
+            </div>
+        </div>
+
+    </div>
+
+    <div class="charts">
+
+        <canvas id="salesByCategoryChart"></canvas>
+
+        <canvas id="salesByRegionChart"></canvas>
+
+    </div>
+
+<script>
+
+    /*
+     * Marcador utilizado por el generador Python.
+     *
+     * dashboard_generator.py reemplazará
+     * __DATA_JSON__ por los registros recuperados
+     * desde BigQuery.
+     */
+
+    const sourceData = __DATA_JSON__;
+
+    let categoryChart = null;
+    let regionChart = null;
+
+
+    function uniqueValues(field) {
+
+        return [
+            ...new Set(
+                sourceData
+                    .map(row => row[field])
+                    .filter(value => value !== null)
+            )
+        ].sort();
+
+    }
+
+
+    function populateFilter(
+        elementId,
+        field
+    ) {
+
+        const select = document.getElementById(
+            elementId
+        );
+
+        uniqueValues(field).forEach(value => {
+
+            const option =
+                document.createElement("option");
+
+            option.value = value;
+            option.textContent = value;
+
+            select.appendChild(option);
+
+        });
+
+    }
+
+
+    function getFilteredData() {
+
+        const year =
+            document.getElementById(
+                "yearFilter"
+            ).value;
+
+        const region =
+            document.getElementById(
+                "regionFilter"
+            ).value;
+
+        const category =
+            document.getElementById(
+                "categoryFilter"
+            ).value;
+
+        const segment =
+            document.getElementById(
+                "segmentFilter"
+            ).value;
+
+        return sourceData.filter(row => {
+
+            const matchesYear =
+                !year ||
+                String(row.year) === year;
+
+            const matchesRegion =
+                !region ||
+                row.region === region;
+
+            const matchesCategory =
+                !category ||
+                row.category === category;
+
+            const matchesSegment =
+                !segment ||
+                row.segment === segment;
+
+            return (
+                matchesYear &&
+                matchesRegion &&
+                matchesCategory &&
+                matchesSegment
+            );
+
+        });
+
+    }
+
+
+    function calculateKpis(data) {
+
+        const sales = data.reduce(
+            (total, row) =>
+                total + Number(row.sales || 0),
+            0
+        );
+
+        const profit = data.reduce(
+            (total, row) =>
+                total + Number(row.profit || 0),
+            0
+        );
+
+        const margin =
+            sales !== 0
+                ? profit / sales
+                : 0;
+
+        const orders =
+            new Set(
+                data.map(
+                    row => row.order_id
+                )
+            ).size;
+
+        const customers =
+            new Set(
+                data.map(
+                    row => row.customer_id
+                )
+            ).size;
+
+        return {
+            sales,
+            profit,
+            margin,
+            orders,
+            customers
+        };
+
+    }
+
+
+    function updateKpis(data) {
+
+        const kpis =
+            calculateKpis(data);
+
+        document.getElementById(
+            "salesKpi"
+        ).textContent =
+            kpis.sales.toLocaleString(
+                "es-EC",
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
+            );
+
+        document.getElementById(
+            "profitKpi"
+        ).textContent =
+            kpis.profit.toLocaleString(
+                "es-EC",
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
+            );
+
+        document.getElementById(
+            "marginKpi"
+        ).textContent =
+            (
+                kpis.margin * 100
+            ).toFixed(2) + "%";
+
+        document.getElementById(
+            "ordersKpi"
+        ).textContent =
+            kpis.orders;
+
+        document.getElementById(
+            "customersKpi"
+        ).textContent =
+            kpis.customers;
+
+    }
+
+
+    function aggregateSales(
+        data,
+        field
+    ) {
+
+        const grouped = {};
+
+        data.forEach(row => {
+
+            const key =
+                row[field] || "Sin valor";
+
+            if (!grouped[key]) {
+                grouped[key] = 0;
+            }
+
+            grouped[key] +=
+                Number(row.sales || 0);
+
+        });
+
+        return grouped;
+
+    }
+
+
+    function updateCharts(data) {
+
+        const categoryData =
+            aggregateSales(
+                data,
+                "category"
+            );
+
+        const regionData =
+            aggregateSales(
+                data,
+                "region"
+            );
+
+
+        if (categoryChart) {
+            categoryChart.destroy();
+        }
+
+        if (regionChart) {
+            regionChart.destroy();
+        }
+
+
+        categoryChart =
+            new Chart(
+                document.getElementById(
+                    "salesByCategoryChart"
+                ),
+                {
+                    type: "bar",
+
+                    data: {
+                        labels:
+                            Object.keys(
+                                categoryData
+                            ),
+
+                        datasets: [{
+                            label:
+                                "Ventas por categoría",
+
+                            data:
+                                Object.values(
+                                    categoryData
+                                )
+                        }]
+                    }
+                }
+            );
+
+
+        regionChart =
+            new Chart(
+                document.getElementById(
+                    "salesByRegionChart"
+                ),
+                {
+                    type: "bar",
+
+                    data: {
+                        labels:
+                            Object.keys(
+                                regionData
+                            ),
+
+                        datasets: [{
+                            label:
+                                "Ventas por región",
+
+                            data:
+                                Object.values(
+                                    regionData
+                                )
+                        }]
+                    }
+                }
+            );
+
+    }
+
+
+    function refreshDashboard() {
+
+        const filteredData =
+            getFilteredData();
+
+        updateKpis(
+            filteredData
+        );
+
+        updateCharts(
+            filteredData
+        );
+
+    }
+
+
+    populateFilter(
+        "yearFilter",
+        "year"
+    );
+
+    populateFilter(
+        "regionFilter",
+        "region"
+    );
+
+    populateFilter(
+        "categoryFilter",
+        "category"
+    );
+
+    populateFilter(
+        "segmentFilter",
+        "segment"
+    );
+
+
+    [
+        "yearFilter",
+        "regionFilter",
+        "categoryFilter",
+        "segmentFilter"
+    ].forEach(id => {
+
+        document.getElementById(id)
+            .addEventListener(
+                "change",
+                refreshDashboard
+            );
+
+    });
+
+
+    refreshDashboard();
+
+</script>
+
+</body>
+</html>
